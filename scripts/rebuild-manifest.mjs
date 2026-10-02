@@ -5,6 +5,7 @@ import { join, relative, resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 const contentDir = join(root, 'content');
+const manifestPath = join(contentDir, 'MANIFEST.json');
 
 const names = (await readdir(contentDir, { withFileTypes: true }))
   .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
@@ -22,15 +23,23 @@ for (const name of names) {
   });
 }
 
+let previous = { version: 1, updated_at: null, files: [] };
+try {
+  previous = JSON.parse(await readFile(manifestPath, 'utf8'));
+} catch {
+  // Rebuild from disk if the manifest is absent or invalid.
+}
+
+if (JSON.stringify(previous.files || []) === JSON.stringify(files)) {
+  console.log(`manifest unchanged: ${files.length} content files`);
+  process.exit(0);
+}
+
 const manifest = {
   version: 1,
   updated_at: new Date().toISOString(),
   files,
 };
 
-await writeFile(
-  join(contentDir, 'MANIFEST.json'),
-  JSON.stringify(manifest, null, 2) + '\n',
-);
-
-console.log(`manifest: ${files.length} content files`);
+await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+console.log(`manifest updated: ${files.length} content files`);
