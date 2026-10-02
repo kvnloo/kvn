@@ -1,10 +1,13 @@
 <h1 align="center">/kvn</h1>
 
-<h3 align="center">A living public distillation of kvn</h3>
+<h3 align="center">A living public distillation of Kevin Rajan</h3>
 
-`/kvn` is a near-realtime distillation of public experience, opinions, tools, workflows, and voice.
+`/kvn` is a near-realtime distillation of public experience, viewpoints,
+tools, workflows, and voice.
 
-The architecture intentionally follows the same pattern as [kunchenguid/kun](https://github.com/kunchenguid/kun): a thin Agent Skill pulls a living knowledge base, then answers from the local cache. This repository reimplements that pattern for `kvnloo/kvn`.
+Its architecture follows the public pattern demonstrated by
+[kunchenguid/kun](https://github.com/kunchenguid/kun): a thin Agent Skill pulls
+a living knowledge base, then answers from a local cache.
 
 ## Quick start
 
@@ -12,7 +15,7 @@ The architecture intentionally follows the same pattern as [kunchenguid/kun](htt
 npx skills add kvnloo/kvn -g
 ```
 
-Then invoke:
+Then:
 
 ```text
 /kvn <question>
@@ -21,11 +24,11 @@ Then invoke:
 ## How it works
 
 ```text
-daily Grok Bot routine                /kvn question
+daily Grok Bot refresh                /kvn question
         │                                   │
         ▼                                   ▼
 refresh living docs                node pull-kvn.mjs
-on main                             → ~/.cache/kvn
++ raw public ledger               → ~/.cache/kvn
         │                                   │
         ▼                                   ▼
 OPINIONS.md  TOOLS.md               read ENTRY + docs
@@ -37,39 +40,66 @@ content/MANIFEST.json                        │
                   grounded answer
 ```
 
-### What the skill loads
+### Runtime pull
 
-1. Run `scripts/pull-kvn.mjs`.
-2. Read the full cached copies of `ENTRY.md`, `TOOLS.md`, `OPINIONS.md`, and `VOICE.md`.
-3. Open matching raw files under `content/` only when the question needs source evidence.
+1. Download and run `scripts/pull-kvn.mjs`.
+2. Read the full cached copies of `ENTRY.md`, `TOOLS.md`, `OPINIONS.md`,
+   and `VOICE.md`.
+3. Open matching raw files under `content/` only when primary evidence is
+   needed.
 4. If the pull fails, stop instead of guessing.
 
 The default cache is `$KVN_PULL_DIR` or `~/.cache/kvn`.
 
-## Living docs
+### Daily living-doc refresh
 
-- `ENTRY.md` — routing and answer contract.
-- `OPINIONS.md` — compact map of public viewpoints.
-- `VOICE.md` — observed writing/speaking patterns.
-- `TOOLS.md` — public tools and repositories.
-- `content/` — raw public-source ledger.
-- `content/MANIFEST.json` — hash index used for incremental sync.
+The Grok Bot process is documented in `GROK_BOT.md` and runs daily in
+America/Chicago.
 
-Keep the four root docs compact. Raw source material belongs in `content/`.
+Current authorized inputs:
 
-## Grok Bot
+- public X posts/replies/quotes from `@_kvnloo`;
+- public repositories owned by `kvnloo`;
+- the public Boplog/build-log feed.
 
-`GROK_BOT.md` contains the setup message and the daily refresh routine for a Grok Bot that maintains this repository and answers from it.
+The process mirrors the reference architecture:
 
-## Incremental pull
+- `OPINIONS.md` and `VOICE.md` are compacted from authored public material.
+  New signals are merged and tightened into the existing map before anything
+  is appended.
+- `content/` holds one raw Markdown record per authored public item.
+- `content/MANIFEST.json` indexes those records by source, stable ID,
+  timestamp, path, and SHA-256.
+- `TOOLS.md` is refreshed from Kevin-owned public, non-archived repositories
+  with meaningful substance.
+
+Substack and YouTube are not inferred automatically; they can be added later
+from canonical account URLs.
+
+## Incremental public ledger
 
 ```sh
+node scripts/rebuild-manifest.mjs
 node scripts/pull-kvn.mjs
 node scripts/pull-kvn.mjs --dir /tmp/kvn-cache
 ```
 
-The pull is manifest-driven: new or changed raw items are downloaded, removed entries are deleted locally, and root docs are hash-synced.
+First empty cache = full pull. Later pulls download only new/changed content,
+remove items deleted from the manifest, and hash-sync the root docs.
+
+## Files
+
+- `ENTRY.md` — answer/routing contract.
+- `OPINIONS.md` — compact map of evidenced public viewpoints.
+- `VOICE.md` — stable public voice patterns.
+- `TOOLS.md` — curated public tools/repositories.
+- `content/` — raw public evidence.
+- `content/MANIFEST.json` — incremental ledger index.
+- `skills/kvn/SKILL.md` — thin Agent Skill.
+- `GROK_BOT.md` — initial backfill + daily refresh process.
 
 ## Provenance
 
-Architecture inspired by [kunchenguid/kun](https://github.com/kunchenguid/kun). This repository contains an independent implementation and does not copy Kun's personal knowledge base.
+Architecture inspired by
+[kunchenguid/kun](https://github.com/kunchenguid/kun). The implementation and
+Kevin-specific knowledge are maintained independently here.
