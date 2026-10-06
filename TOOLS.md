@@ -122,6 +122,16 @@ Try: https://kvnloo.github.io/AudioEngine/
 
 Status: historical.
 
+## warp
+
+https://github.com/kvnloo/warp
+
+Fast Plex client for a Samsung QN85B TV (Tizen 6.5, Chromium M85 target), GPL-3.0-only. Builds a signed Tizen widget and installs/launches it on the TV over the local network; the red button opens an on-device performance receipt. For people who want a snappier Plex front end on an older Samsung TV.
+
+Try: `npm ci && npm run dev` for the browser UI, or set `TV_IP` in `.env` and `npm run tv` to build, package, install, and launch on the TV.
+
+Status: experimental (first Tizen vertical slice, Oct 2026).
+
 ## Not included (on purpose)
 
 Large numbers of public forks without Kevin-owned product substance, empty placeholder scaffolds, and stealth/company-OS mirror repos were considered from the public `kvnloo` owner list and Boplog feed but left out of this curated map. Prefer Boplog JSON for exhaustive project inventory: https://kvnloo.github.io/boplog/data/manifest.json.
