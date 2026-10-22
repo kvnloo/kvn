@@ -24,6 +24,7 @@ test("site index only uses manifest-verified public files, deterministically", (
   execFileSync(process.execPath, ["scripts/build-site-index.mjs"]);
   const second = readFileSync("site/knowledge.json", "utf8");
   assert.equal(first, second);
+  assert.equal(readFileSync("site/search.js", "utf8"), readFileSync("worker/search.js", "utf8"));
   const indexed = JSON.parse(first);
   assert.ok(indexed.chunks.length >= 10);
   assert.ok(indexed.chunks.every((source) => /^https:\/\//.test(source.url)));

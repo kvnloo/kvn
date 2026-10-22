@@ -75,6 +75,13 @@ cannot be sent through this site's backend.
   Answer coverage is limited to the currently verified public snapshot.
 
 Streaming answers are enabled on the free Cloudflare default using SSE.
-Future improvements: add WebLLM browser-local fallback;
+Local browser inference is available as a visitor-selected alternative. It
+uses WebLLM 0.2.86 and a quantized Llama 3.2 1B model. Inference runs entirely
+in the visitor's WebGPU browser, with no API key and no Worker AI usage.
+First use downloads model weights and a model runtime from MLC/CDN; not every
+browser has WebGPU or enough device memory. This path still uses the exact
+same deterministic public evidence index and citations.
+
+Future improvements:
 expand authorized public-source sync; add evals for evidence accuracy;
 introduce site analytics only with explicit privacy guardrails.

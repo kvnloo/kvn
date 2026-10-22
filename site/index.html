@@ -56,6 +56,7 @@
             <label for="provider">Model provider</label>
             <select id="provider">
               <option value="cloudflare">Qwen3 30B · free</option>
+              <option value="browser">Llama 3.2 1B · on-device (WebGPU)</option>
               <option value="groq">Groq · bring a key</option>
               <option value="openrouter">OpenRouter · bring a key</option>
             </select>
@@ -66,7 +67,7 @@
               <input id="model" autocomplete="off" spellcheck="false">
               <small>Key goes through this site's Worker to your selected provider. It is never saved by this app.</small>
             </div>
-            <p class="hint">Free inference is quota-limited. BYO is optional; browser-local models are a future option.</p>
+            <p class="hint">Cloud inference is quota-limited. Local AI is free and downloads a model to your device (~1 GB); it needs WebGPU. BYO keys are optional.</p>
           </div>
           <div class="panel">
             <p class="overline">02 / EVIDENCE</p>

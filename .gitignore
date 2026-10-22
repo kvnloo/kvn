@@ -3,3 +3,4 @@ node_modules/
 .dev.vars
 site/knowledge.json
 .DS_Store
+site/search.js

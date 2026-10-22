@@ -1,3 +1,4 @@
+import { askLocally } from "./local-llm.js";
 import { parseChatResponse } from "./sse.js";
 const $ = (selector) => document.querySelector(selector);
 const form = $("#ask");
@@ -13,7 +14,7 @@ const status = $("#status");
 const state = { turns: [], busy: false, turnstileToken: "", turnstileWidget: null };
 
 function setProvider() {
-  const isByo = provider.value !== "cloudflare";
+  const isByo = provider.value === "groq" || provider.value === "openrouter";
   byoFields.hidden = !isByo;
   model.value = provider.value === "groq" ? "openai/gpt-oss-120b" : "openrouter/free";
   apiKey.value = "";
@@ -85,24 +86,36 @@ async function submit(question) {
   addMessage("user", userQuestion);
   const waiting = addMessage("assistant", "retrieving public evidence…");
   try {
-    const payload = {
-      question: userQuestion, history: state.turns.slice(-4),
-      provider: provider.value, turnstileToken: state.turnstileToken,
-      stream: provider.value === "cloudflare"
-    };
-    if (provider.value !== "cloudflare") {
-      payload.apiKey = apiKey.value;
-      payload.model = model.value;
+    let data;
+    if (provider.value === "browser") {
+      data = await askLocally(
+        userQuestion, state.turns.slice(-4),
+        (answer) => {
+          waiting.content.textContent = answer;
+          thread.scrollTop = thread.scrollHeight;
+        },
+        (message) => { status.textContent = message; }
+      );
+    } else {
+      const payload = {
+        question: userQuestion, history: state.turns.slice(-4),
+        provider: provider.value, turnstileToken: state.turnstileToken,
+        stream: provider.value === "cloudflare"
+      };
+      if (provider.value === "groq" || provider.value === "openrouter") {
+        payload.apiKey = apiKey.value;
+        payload.model = model.value;
+      }
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      data = await parseChatResponse(response, ({ answer }) => {
+        if (answer) waiting.content.textContent = answer;
+        thread.scrollTop = thread.scrollHeight;
+      });
     }
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await parseChatResponse(response, ({ answer }) => {
-      if (answer) waiting.content.textContent = answer;
-      thread.scrollTop = thread.scrollHeight;
-    });
     waiting.content.textContent = data.answer;
     renderSources(Array.isArray(data.sources) ? data.sources : []);
     if (Array.isArray(data.sources) && data.sources.length) {
@@ -123,6 +136,7 @@ async function submit(question) {
     state.turns = state.turns.slice(-8);
     status.textContent = "answered via " + data.model;
   } catch (error) {
+    input.value = userQuestion;
     waiting.content.textContent = error.message;
     status.textContent = "temporarily unavailable";
   } finally {

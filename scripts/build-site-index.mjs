@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,4 +70,5 @@ const digest = createHash("sha256").update(JSON.stringify(chunks)).digest("hex")
 const data = { schemaVersion: 1, digest, sourceRepository: "https://github.com/kvnloo/kvn", chunks };
 mkdirSync(join(root, "site"), { recursive: true });
 writeFileSync(join(root, "site/knowledge.json"), JSON.stringify(data, null, 2) + "\n");
+copyFileSync(join(root, "worker/search.js"), join(root, "site/search.js"));
 console.log("Generated " + chunks.length + " public evidence chunks (" + digest + ")");
