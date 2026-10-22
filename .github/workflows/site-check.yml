@@ -28,3 +28,4 @@ jobs:
           node-version: "22"
       - run: npm run test:site
       - run: npm run build:site
+      - run: npx --yes wrangler@4 deploy --dry-run --outdir /tmp/kvn-bundle
