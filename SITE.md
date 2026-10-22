@@ -74,6 +74,7 @@ cannot be sent through this site's backend.
 - Lexical retrieval is an initial baseline, not embeddings or live GitHub search.
   Answer coverage is limited to the currently verified public snapshot.
 
-Future improvements: stream answers; add WebLLM browser-local fallback;
+Streaming answers are enabled on the free Cloudflare default using SSE.
+Future improvements: add WebLLM browser-local fallback;
 expand authorized public-source sync; add evals for evidence accuracy;
 introduce site analytics only with explicit privacy guardrails.

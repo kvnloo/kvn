@@ -1,3 +1,4 @@
+import { parseChatResponse } from "./sse.js";
 const $ = (selector) => document.querySelector(selector);
 const form = $("#ask");
 const thread = $("#thread");
@@ -86,7 +87,8 @@ async function submit(question) {
   try {
     const payload = {
       question: userQuestion, history: state.turns.slice(-4),
-      provider: provider.value, turnstileToken: state.turnstileToken
+      provider: provider.value, turnstileToken: state.turnstileToken,
+      stream: provider.value === "cloudflare"
     };
     if (provider.value !== "cloudflare") {
       payload.apiKey = apiKey.value;
@@ -97,8 +99,10 @@ async function submit(question) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Unable to answer right now.");
+    const data = await parseChatResponse(response, ({ answer }) => {
+      if (answer) waiting.content.textContent = answer;
+      thread.scrollTop = thread.scrollHeight;
+    });
     waiting.content.textContent = data.answer;
     renderSources(Array.isArray(data.sources) ? data.sources : []);
     if (Array.isArray(data.sources) && data.sources.length) {

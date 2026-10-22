@@ -28,6 +28,36 @@ async function checkTurnstile(secret, token, ip, hostname) {
   }
 }
 
+function streamAnswer(modelStream, sources, model) {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode("event: sources\ndata: " + JSON.stringify({ sources, model }) + "\n\n"));
+      const reader = modelStream.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(typeof value === "string" ? encoder.encode(value) : value);
+        }
+      } catch {
+        controller.enqueue(encoder.encode('event: error\ndata: {"error":"Inference stream interrupted."}\n\n'));
+      } finally {
+        reader.releaseLock();
+        controller.close();
+      }
+    }
+  });
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache, no-transform",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}
+
 async function chat(request, env) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return reply({ error: "Cross-origin requests are disabled." }, 403);
@@ -101,6 +131,20 @@ async function chat(request, env) {
   ).map(({ role, content }) => ({ role, content })) : [];
   const messages = [{ role: "system", content: system }, ...history, { role: "user", content: question }];
 
+  const sources = hits.map((doc) => ({ title: doc.title, url: doc.url, type: doc.type }));
+  if (provider === "cloudflare" && input.stream === true) {
+    try {
+      if (!env.AI) return reply({ error: "Cloudflare AI binding not configured." }, 503);
+      const output = await env.AI.run(FREE_MODEL, {
+        messages, max_tokens: 350, temperature: 0.35, stream: true
+      });
+      if (!output || typeof output.getReader !== "function") throw new Error("No readable output");
+      return streamAnswer(output, sources, FREE_MODEL);
+    } catch {
+      return reply({ error: "Streaming inference unavailable or daily free quota exhausted." }, 503);
+    }
+  }
+
   let answer;
   let model = FREE_MODEL;
   try {
@@ -138,7 +182,7 @@ async function chat(request, env) {
   return reply({
     answer: answer.trim(),
     model,
-    sources: hits.map((doc) => ({ title: doc.title, url: doc.url, type: doc.type }))
+    sources
   });
 }
 

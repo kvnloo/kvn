@@ -1,3 +1,4 @@
+import { parseChatResponse } from "../site/sse.js";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -99,4 +100,42 @@ test("status exposes configuration but never a secret", async () => {
   const status = await response.json();
   assert.equal(status.freeConfigured, false);
   assert.ok(!("TURNSTILE_SECRET" in status));
+});
+
+test("streaming parser survives split UTF-8/SSE chunks and retains evidence", async () => {
+  const encoder = new TextEncoder();
+  const raw = 'event: sources\ndata: {"sources":[{"title":"warp","url":"https://github.com/kvnloo/warp"}],"model":"qwen"}\n\n' +
+    'data: {"response":"warp"}\n\n' + 'data: {"response":" works"}\n\n' + 'data: [DONE]\n\n';
+  const bytes = encoder.encode(raw);
+  const chunks = [bytes.slice(0, 7), bytes.slice(7, 53), bytes.slice(53, 101), bytes.slice(101)];
+  const response = new Response(new ReadableStream({
+    start(controller) { for (const item of chunks) controller.enqueue(item); controller.close(); }
+  }), { headers: { "content-type": "text/event-stream" } });
+  const updates = [];
+  const result = await parseChatResponse(response, (x) => updates.push(x));
+  assert.equal(result.answer, "warp works");
+  assert.equal(result.sources[0].title, "warp");
+  assert.ok(updates.length >= 2);
+});
+
+test("worker streams sourced Cloudflare response", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, hostname: "kvn.test" }));
+  const env = { ...makeEnv(), TURNSTILE_SITE_KEY: "test-site", TURNSTILE_SECRET: "test-secret" };
+  env.AI.run = async (_model, options) => {
+    assert.equal(options.stream, true);
+    return new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"response":"warp works [1]"}\n\n'));
+        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+        controller.close();
+      }
+    });
+  };
+  const response = await worker.fetch(post({
+    question: "warp Tizen", turnstileToken: "valid-test-token", stream: true
+  }), env);
+  assert.equal(response.status, 200);
+  const output = await parseChatResponse(response);
+  assert.match(output.answer, /warp/);
+  assert.equal(output.sources[0].url, chunks[0].url);
 });
