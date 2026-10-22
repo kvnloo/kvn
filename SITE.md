@@ -19,8 +19,10 @@ Requires Node.js 20+, a free Cloudflare account, and Wrangler authentication.
 The deployment command regenerates site/knowledge.json before uploading assets.
 No third-party LLM key is needed: wrangler.jsonc defines the AI and static asset
 bindings plus an anonymous request-rate limiter. The free model stops serving
-when Cloudflare's daily Workers AI allocation is used up; there is no paid
-fallback or automatic billing in this design.
+when Cloudflare's daily Workers AI allocation is used up **on the Workers Free
+plan**. On Workers Paid, overage is billed unless you enforce an additional
+budget cap; this app does not implement a global hard quota. Deploy on a Free
+plan to guarantee the free allocation stops rather than charging.
 
 The site is not deployed by a PR alone. A Cloudflare account must authorize
 the first deployment. Optionally configure a custom domain afterward.
