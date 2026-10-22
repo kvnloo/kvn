@@ -4,7 +4,7 @@ on:
     paths:
       - "site/**"
       - "worker/**"
-      - "scripts/build-site-index.mjs"
+      - "scripts/**"
       - "content/**"
       - "*.md"
       - "package.json"
@@ -13,7 +13,7 @@ on:
     paths:
       - "site/**"
       - "worker/**"
-      - "scripts/build-site-index.mjs"
+      - "scripts/**"
       - "content/**"
       - "*.md"
       - "package.json"
@@ -28,4 +28,5 @@ jobs:
           node-version: "22"
       - run: npm run test:site
       - run: npm run build:site
+      - run: node --check scripts/smoke-site.mjs
       - run: npx --yes wrangler@4 deploy --dry-run --outdir /tmp/kvn-bundle

@@ -149,7 +149,7 @@ async function init() {
     const response = await fetch("/api/status");
     if (!response.ok) throw new Error();
     const data = await response.json();
-    status.textContent = "online · quota-limited free tier";
+    status.textContent = data.freeConfigured ? "online · quota-limited free tier" : "free chat setup pending";
     if (data.turnstileSiteKey) {
       const script = document.createElement("script");
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";

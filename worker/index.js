@@ -13,15 +13,19 @@ function reply(value, status = 200) {
   });
 }
 
-async function checkTurnstile(secret, token, ip) {
-  if (!secret) return true;
-  if (typeof token !== "string" || token.length > 2048 || !token) return false;
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    body: new URLSearchParams({ secret, response: token, remoteip: ip || "" })
-  });
-  if (!response.ok) return false;
-  return Boolean((await response.json()).success);
+async function checkTurnstile(secret, token, ip, hostname) {
+  if (!secret || typeof token !== "string" || token.length > 2048 || !token) return false;
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: new URLSearchParams({ secret, response: token, remoteip: ip || "" })
+    });
+    if (!response.ok) return false;
+    const result = await response.json();
+    return result.success === true && result.hostname === hostname;
+  } catch {
+    return false;
+  }
 }
 
 async function chat(request, env) {
@@ -51,10 +55,6 @@ async function chat(request, env) {
     if (!success) return reply({ error: "Rate limited. Please try later or use a different network." }, 429);
   }
 
-  if (provider === "cloudflare" && !(await checkTurnstile(env.TURNSTILE_SECRET, input.turnstileToken, ip))) {
-    return reply({ error: "Verification required. Complete the anti-bot check and retry." }, 403);
-  }
-
   let index;
   try {
     const url = new URL("/knowledge.json", request.url);
@@ -73,6 +73,15 @@ async function chat(request, env) {
       sources: [],
       model: "evidence-only"
     });
+  }
+
+  if (provider === "cloudflare") {
+    if (!env.TURNSTILE_SITE_KEY || !env.TURNSTILE_SECRET) {
+      return reply({ error: "Free chat setup incomplete. Site owner must configure Turnstile." }, 503);
+    }
+    if (!(await checkTurnstile(env.TURNSTILE_SECRET, input.turnstileToken, ip, new URL(request.url).hostname))) {
+      return reply({ error: "Verification required. Complete the anti-bot check and retry." }, 403);
+    }
   }
 
   const evidence = hits.map((doc, i) =>
@@ -140,6 +149,7 @@ export default {
       return reply({
         defaultModel: FREE_MODEL,
         turnstileSiteKey: env.TURNSTILE_SECRET ? (env.TURNSTILE_SITE_KEY || "") : "",
+        freeConfigured: Boolean(env.AI && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY),
         byoProviders: Object.keys(PROVIDERS)
       });
     }

@@ -45,8 +45,10 @@ function post(data, headers = {}) {
   });
 }
 
-test("free chat retrieves evidence and supplies model answer", async () => {
-  const result = await worker.fetch(post({ question: "Tell me about warp Tizen" }), makeEnv());
+test("free chat retrieves evidence and supplies model answer", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, hostname: "kvn.test" }));
+  const env = { ...makeEnv(), TURNSTILE_SITE_KEY: "site-key", TURNSTILE_SECRET: "test-secret" };
+  const result = await worker.fetch(post({ question: "Tell me about warp Tizen", turnstileToken: "validated-token" }), env);
   assert.equal(result.status, 200);
   const json = await result.json();
   assert.equal(json.model, "@cf/qwen/qwen3-30b-a3b-fp8");
@@ -74,4 +76,27 @@ test("cross-origin and bad input fail closed", async () => {
   assert.equal(tooLong.status, 400);
   const unsupported = await worker.fetch(post({ question: "warp", provider: "custom" }), makeEnv());
   assert.equal(unsupported.status, 400);
+});
+
+test("free inference fails closed without Turnstile bindings", async () => {
+  const result = await worker.fetch(post({ question: "Tell me about warp Tizen" }), makeEnv());
+  assert.equal(result.status, 503);
+  assert.match((await result.json()).error, /Turnstile/);
+});
+
+test("Turnstile validates hostname and single-use token", async (t) => {
+  const env = { ...makeEnv(), TURNSTILE_SITE_KEY: "site-key", TURNSTILE_SECRET: "test-secret" };
+  const missing = await worker.fetch(post({ question: "warp Tizen" }), env);
+  assert.equal(missing.status, 403);
+  t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, hostname: "different.example" }));
+  const mismatch = await worker.fetch(post({ question: "warp Tizen", turnstileToken: "token" }), env);
+  assert.equal(mismatch.status, 403);
+});
+
+test("status exposes configuration but never a secret", async () => {
+  const response = await worker.fetch(new Request("https://kvn.test/api/status"), makeEnv());
+  assert.equal(response.status, 200);
+  const status = await response.json();
+  assert.equal(status.freeConfigured, false);
+  assert.ok(!("TURNSTILE_SECRET" in status));
 });
