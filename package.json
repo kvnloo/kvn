@@ -1,0 +1,11 @@
+{
+  "name": "kvn-public-chat",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:site": "node scripts/build-site-index.mjs",
+    "test:site": "node --test tests/site.test.mjs",
+    "deploy:site": "npm run build:site && npx --yes wrangler@4 deploy"
+  },
+  "engines": {"node": ">=20"}
+}

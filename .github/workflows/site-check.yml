@@ -1,0 +1,30 @@
+name: Public chat checks
+on:
+  push:
+    paths:
+      - "site/**"
+      - "worker/**"
+      - "scripts/build-site-index.mjs"
+      - "content/**"
+      - "*.md"
+      - "package.json"
+      - ".github/workflows/site-check.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "worker/**"
+      - "scripts/build-site-index.mjs"
+      - "content/**"
+      - "*.md"
+      - "package.json"
+      - ".github/workflows/site-check.yml"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm run test:site
+      - run: npm run build:site
