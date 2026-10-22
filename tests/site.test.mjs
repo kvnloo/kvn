@@ -1,3 +1,4 @@
+import { toPublicChunks } from "../worker/public-projects.js";
 import { parseChatResponse } from "../site/sse.js";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -35,6 +36,7 @@ test("site index only uses manifest-verified public files, deterministically", (
 function makeEnv({ limited = false } = {}) {
   return {
     ASSETS: { fetch: async () => Response.json({ chunks }) },
+    PUBLIC_PROJECTS_DISABLED: "true",
     RATE_LIMIT: { limit: async () => ({ success: !limited }) },
     AI: { run: async () => ({ response: "warp is a Tizen front end [1]." }) }
   };
@@ -139,4 +141,20 @@ test("worker streams sourced Cloudflare response", async (t) => {
   const output = await parseChatResponse(response);
   assert.match(output.answer, /warp/);
   assert.equal(output.sources[0].url, chunks[0].url);
+});
+
+test("Boplog conversion keeps only trusted public evidence and marks forks", () => {
+  const result = toPublicChunks({ files: ["projects-2026.json"] }, [{
+    projects: [
+      { name: "noop", description: "Human-centered desktop utility", url: "https://github.com/kvnloo/noop", kindName: "project" },
+      { name: "noop", description: "duplicate", url: "https://github.com/kvnloo/noop" },
+      { name: "fake", description: "unauthorized", url: "https://example.com/secret" },
+      { name: "bad name", description: "invalid", url: "https://github.com/kvnloo/bad" }
+    ]
+  }]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].title, "noop");
+  assert.equal(result[0].type, "public-project");
+  assert.match(result[0].text, /does not establish sole authorship/);
+  assert.equal(retrieve("Tell me about noop", result, 1)[0].url, "https://github.com/kvnloo/noop");
 });

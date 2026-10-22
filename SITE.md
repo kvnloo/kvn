@@ -40,7 +40,14 @@ builder checks the SHA-256 of each raw record and creates section-sized chunks
 with canonical public source links.
 
 On each update to the knowledge files, run npm run deploy:site to publish the
-new snapshot. No new accounts or private materials may be added automatically.
+new snapshot. The Worker also fetches the public Boplog project snapshots at
+runtime from https://kvnloo.github.io/boplog/data/ (15-minute in-isolate
+cache plus Cloudflare cache hints). Only public project summaries and links
+on the known kvnloo hosts are used. Boplog tracks contributed forks as well
+as originals: the AI must not equate a fork listing to sole authorship.
+If Boplog is temporarily unavailable, fall back to the curated /kvn index.
+The browser-local model can retrieve the same public project summaries via
+/api/public-projects without sending visitors' questions to the server. No new accounts or private materials may be added automatically.
 GitHub, X and Boplog data should enter through the existing GROK_BOT.md public
 refresh rules; the chat runtime does not crawl arbitrary websites.
 

@@ -13,7 +13,17 @@ function loadIndex() {
       if (!response.ok) throw new Error("Public evidence index is unavailable.");
       const payload = await response.json();
       if (!Array.isArray(payload.chunks)) throw new Error("Evidence index is malformed.");
-      return payload.chunks;
+      // Public metadata is shared from the same Boplog-backed Worker endpoint.
+      // No user's questions are transmitted by this background metadata fetch.
+      let extra = [];
+      try {
+        const projectResponse = await fetch("/api/public-projects");
+        if (projectResponse.ok) {
+          const projectData = await projectResponse.json();
+          if (Array.isArray(projectData.chunks)) extra = projectData.chunks;
+        }
+      } catch { /* Keep the curated public snapshot when offline. */ }
+      return [...extra, ...payload.chunks];
     }).catch((error) => {
       indexPromise = null;
       throw error;

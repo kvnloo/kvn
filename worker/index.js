@@ -1,3 +1,4 @@
+import { getPublicProjectIndex } from "./public-projects.js";
 import { retrieve } from "./search.js";
 
 const FREE_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
@@ -96,7 +97,13 @@ async function chat(request, env) {
     return reply({ error: "Public knowledge index unavailable. Run the site build before deploying." }, 503);
   }
 
-  const hits = retrieve(question, index.chunks, 5);
+  // Pull current public GitHub/Boplog project descriptions (cache ~15 minutes).
+  // Network failure is nonfatal: the signed, in-repo evidence snapshot remains usable.
+  let projectChunks = [];
+  if (env.PUBLIC_PROJECTS_DISABLED !== "true") {
+    projectChunks = (await getPublicProjectIndex()).chunks;
+  }
+  const hits = retrieve(question, [...projectChunks, ...index.chunks], 5);
   if (!hits.length) {
     return reply({
       answer: "I couldn't find reliable public material in /kvn to answer that. Try a question about Kevin's projects, public opinions, or engineering work.",
@@ -195,6 +202,14 @@ export default {
         turnstileSiteKey: env.TURNSTILE_SECRET ? (env.TURNSTILE_SITE_KEY || "") : "",
         freeConfigured: Boolean(env.AI && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY),
         byoProviders: Object.keys(PROVIDERS)
+      });
+    }
+    if (pathname === "/api/public-projects") {
+      if (request.method !== "GET") return reply({ error: "GET required." }, 405);
+      const snapshot = await getPublicProjectIndex();
+      return reply({
+        generatedAt: snapshot.generatedAt,
+        chunks: snapshot.chunks
       });
     }
     if (pathname === "/api/chat") {
