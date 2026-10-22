@@ -30,6 +30,8 @@ secrets or unrelated accounts.
 Requires Node.js 20+, git and a Cloudflare account with Workers, Workers AI
 and Turnstile. If using the Cloudflare Turnstile API, obtain an API token with
 Account:Turnstile:Edit and the account ID, in addition to Wrangler login.
+Use a separate KVN_TURNSTILE_API_TOKEN for widget management; it must not
+supersede the Wrangler OAuth login used for Worker secrets/deploy.
 
 ~~~bash
 git clone https://github.com/kvnloo/kvn.git
@@ -39,7 +41,7 @@ git switch --track origin/feat/public-chat-free-inference
 npm run test:site
 npm run build:site
 npx --yes wrangler@4 deploy --dry-run --outdir /tmp/kvn-cloudflare-build
-npx --yes wrangler@4 whoami
+npx --yes wrangler@4 whoami  # run wrangler login first if not signed in
 ~~~
 
 If PR #1 is already merged, inspect and deploy its merged revision from main
@@ -63,14 +65,14 @@ restricted to the exact workers.dev hostname (or final custom hostname).
 
 Option A: Cloudflare API from CLI (requires jq, a scoped token, account ID,
 and environment variable KVN_HOSTNAME). Never hardcode credentials in source,
-shell history or output. Environment variables CLOUDFLARE_ACCOUNT_ID,
-CLOUDFLARE_API_TOKEN, and KVN_HOSTNAME must be set in the Hermes session.
+shell history or output. Export CLOUDFLARE_ACCOUNT_ID,
+KVN_TURNSTILE_API_TOKEN, and KVN_HOSTNAME in the Hermes session.
 
 ~~~bash
 set +x
 WIDGET_JSON="$(curl --fail-with-body -sS \
   -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/challenges/widgets" \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Authorization: Bearer $KVN_TURNSTILE_API_TOKEN" \
   -H "Content-Type: application/json" \
   --data "$(node -e 'console.log(JSON.stringify({domains:[process.env.KVN_HOSTNAME],mode:"managed",name:"kvn-public-chat"}))')")"
 printf '%s' "$WIDGET_JSON" | jq -e '.success == true' >/dev/null
@@ -138,3 +140,29 @@ Official Cloudflare docs:
 - https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
 - https://developers.cloudflare.com/workers/configuration/secrets/
 - https://developers.cloudflare.com/turnstile/get-started/widget-management/api/
+
+
+## 6. Optional continuous deployment after merging PR #1
+
+A guarded GitHub Actions workflow is in .github/workflows/site-deploy.yml.
+It is disabled until the repository variable below is set to true. Once
+configured, a successful push to main that changes public sources or site
+code redeploys the same Cloudflare Worker, and workflow_dispatch allows
+manual reruns. The live Boplog metadata endpoint is already refreshed at
+runtime, so Boplog updates alone do not need a rebuild.
+
+With GitHub CLI authorized for kvnloo/kvn and Cloudflare deploy permissions,
+set scoped GitHub Actions secrets without printing their values:
+
+~~~bash
+gh secret set CLOUDFLARE_ACCOUNT_ID --repo kvnloo/kvn
+gh secret set CLOUDFLARE_API_TOKEN --repo kvnloo/kvn
+gh variable set KVN_SITE_URL --repo kvnloo/kvn --body "https://ACTUAL-WORKER.ACTUAL-SUBDOMAIN.workers.dev"
+gh variable set KVN_CLOUDFLARE_DEPLOY_ENABLED --repo kvnloo/kvn --body true
+~~~
+
+Only enable the workflow once human review accepts PR #1 and the real
+deployment is verified. Use a token scoped to Workers deploy only; it should
+not inherit Turnstile widget-management permissions needlessly.
+If gh permissions are unavailable, leave the workflow disabled and document
+the missing authorization. Never open a second Worker or commit credentials.
