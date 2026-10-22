@@ -103,6 +103,7 @@ remove items deleted from the manifest, and hash-sync the root docs.
 A zero-visitor-key public chat frontend + free Cloudflare Workers AI backend is in
 this repository. See [SITE.md](SITE.md) for running tests, deploying,
 source-grounding, BYO model keys and security limits.
+For Cloudflare CLI/Hermes deployment, follow [HERMES_DEPLOY.md](HERMES_DEPLOY.md).
 
 ## Provenance
 

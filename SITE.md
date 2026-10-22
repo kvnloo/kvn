@@ -8,6 +8,11 @@ default free model. No visitor account or API key is needed for free chat.
 
 ## Start, test and deploy
 
+**Hermes / Cloudflare CLI deployment:** use the complete
+[HERMES_DEPLOY.md](HERMES_DEPLOY.md) handoff. Complete Turnstile setup before
+sharing the Worker URL; free inference deliberately fails closed without
+both sitekey and secret.
+
 Requires Node.js 20+, a free Cloudflare account, and Wrangler authentication.
 
 1. Run: npm run test:site
@@ -53,10 +58,10 @@ cannot be sent through this site's backend.
 
 - The Worker enforces a small approximate per-IP rate limit (5 requests/minute)
   via the Cloudflare Rate Limiting binding. People sharing an IP can collide.
-- For more protection, configure a free Cloudflare Turnstile widget: add the
-  public TURNSTILE_SITE_KEY variable in wrangler.jsonc under vars, then run
-  npx wrangler secret put TURNSTILE_SECRET. The Worker validates each free-chat
-  token server-side. Configure both values together.
+- Free Cloudflare chat requires a Turnstile widget. Configure both
+  TURNSTILE_SITE_KEY and TURNSTILE_SECRET with wrangler secret put. The Worker
+  validates each token and its hostname using Siteverify; unconfigured free
+  inference returns HTTP 503 (fail closed).
 - Model output is text, never injected as HTML. External URL fetching and
   arbitrary BYO inference endpoints are intentionally disallowed.
 - Questions, public evidence and BYO API keys transit through the selected
