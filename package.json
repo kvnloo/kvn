@@ -1,0 +1,15 @@
+{
+  "name": "kvn-public-chat",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:site": "node scripts/build-site-index.mjs",
+    "test:site": "node --test tests/site.test.mjs",
+    "deploy:site": "npm run build:site && npx --yes wrangler@4 deploy",
+    "smoke:site": "node scripts/smoke-site.mjs",
+    "check:site": "npm run test:site && npm run build:site && npx --yes wrangler@4 deploy --dry-run --outdir /tmp/kvn-bundle"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
