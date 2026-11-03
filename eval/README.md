@@ -86,10 +86,10 @@ screening only.
 | free* | `@cf/meta/llama-4-scout-17b-16e-instruct` | 8.60 | 33 | 7.9 s | 43.6 |
 | free* | `@cf/openai/gpt-oss-20b` | 8.24 | 10 | 1.5 s | 34.5 |
 | Groq key (default) | `qwen/qwen3.8-27b` | **9.86** | 34 | 0.6 s | – |
-| Groq key | `openai/gpt-oss-120b` | 9.20 | 36 | 0.7 s | – |
+| Groq key | `openai/gpt-oss-120b` | 9.22 | 36 | 0.7 s | – |
 | OpenRouter key | `openrouter/free` (routes to any free model) | 9.76 | 27 | 4.1 s | – |
 | in-browser stand-in | Qwen3 4B (instruct-2507) | 9.28 | 32 | CPU | – |
-| in-browser stand-in | Qwen3 1.7B | LOCAL17_SCORE | LOCAL17_CLEAN | CPU | – |
+| in-browser stand-in | Qwen3 1.7B | 7.60 | 28 | CPU | – |
 | in-browser stand-in* | Llama 3.2 1B (the old default) | 4.94 | 11 | CPU | – |
 
 Qwen3 30B stays the free default: it ties Gemma 4 on quality at half the neurons and latency.

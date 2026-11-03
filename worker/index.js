@@ -152,7 +152,7 @@ async function chat(request, env) {
       if (!output || typeof output.getReader !== "function") throw new Error("No readable output");
       return streamAnswer(output, sources, FREE_MODEL, hits);
     } catch {
-      return reply({ error: "Streaming inference unavailable or daily free quota exhausted." }, 503);
+      return reply({ error: "The free model is unavailable right now, usually because today's free quota is used up. Pick on-device AI (free, runs in your browser) or bring a Groq/OpenRouter key, or try again tomorrow." }, 503);
     }
   }
 
@@ -187,7 +187,7 @@ async function chat(request, env) {
     if (typeof answer !== "string" || !answer.trim()) throw new Error("Empty output");
     answer = autoCite(answer, hits);
   } catch {
-    return reply({ error: "Inference temporarily unavailable. The free quota may be exhausted; try BYO provider or come back later." }, 503);
+    return reply({ error: "The model is unavailable right now. If you're on the free model, today's free quota may be used up: pick on-device AI or bring a Groq/OpenRouter key, or try again tomorrow." }, 503);
   }
 
   return reply({
