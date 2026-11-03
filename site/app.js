@@ -1,4 +1,5 @@
 import { askLocally } from "./local-llm.js";
+import { renderMarkdown } from "./render.js";
 import { parseChatResponse } from "./sse.js";
 const $ = (selector) => document.querySelector(selector);
 const form = $("#ask");
@@ -16,13 +17,13 @@ const state = { turns: [], busy: false, turnstileToken: "", turnstileWidget: nul
 function setProvider() {
   const isByo = provider.value === "groq" || provider.value === "openrouter";
   byoFields.hidden = !isByo;
-  model.value = provider.value === "groq" ? "openai/gpt-oss-120b" : "openrouter/free";
+  model.value = provider.value === "groq" ? "qwen/qwen3.8-27b" : "openrouter/free";
   apiKey.value = "";
 }
 provider.addEventListener("change", setProvider);
 setProvider();
 
-function addMessage(role, value, refs = []) {
+function addMessage(role, value) {
   const bubble = document.createElement("article");
   bubble.className = "bubble " + role;
   const label = document.createElement("div");
@@ -30,25 +31,46 @@ function addMessage(role, value, refs = []) {
   label.textContent = role === "user" ? "visitor" : "/kvn · AI";
   const content = document.createElement("div");
   content.className = "message";
-  content.textContent = value; // Never render model output as HTML.
+  content.textContent = value; // Visitor text and status lines are plain text.
   bubble.append(label, content);
-  if (refs.length) {
-    const links = document.createElement("div");
-    links.className = "answer-sources";
-    refs.forEach((ref, index) => {
-      if (!/^https:\/\//.test(ref.url)) return;
-      const link = document.createElement("a");
-      link.href = ref.url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "source " + (index + 1) + " ↗";
-      links.append(link);
-    });
-    bubble.append(links);
-  }
   thread.append(bubble);
   thread.scrollTop = thread.scrollHeight;
   return { bubble, content };
+}
+
+// Model output: safe Markdown subset built as DOM nodes; [n] markers link to sources.
+function showAnswer(content, answer, refs) {
+  renderMarkdown(document, content, answer, refs);
+}
+
+function answerSources(bubble, refs) {
+  const usable = refs.map((ref, index) => ({ ref, index })).filter(({ ref }) => /^https:\/\//.test(ref.url));
+  if (!usable.length) return;
+  const list = document.createElement("ol");
+  list.className = "answer-sources";
+  list.setAttribute("aria-label", "Sources for this answer");
+  for (const { ref, index } of usable) {
+    const item = document.createElement("li");
+    item.value = index + 1;
+    item.setAttribute("value", String(index + 1));
+    const link = document.createElement("a");
+    link.href = ref.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = sourceLabel(ref);
+    item.append(link);
+    list.append(item);
+  }
+  bubble.append(list);
+}
+
+// Where a source lives, so two sources with one title ("warp" in TOOLS.md and on Boplog) differ.
+function sourceLabel(ref) {
+  const title = ref.title || new URL(ref.url).hostname;
+  if (ref.type === "public-project") return title + " · Boplog";
+  const file = /\/blob\/[^/]+\/(.+)$/.exec(ref.url || "")?.[1];
+  if (file && file !== title) return title + " · " + file.replace(/^content\//, "");
+  return title;
 }
 
 function renderSources(refs) {
@@ -65,7 +87,7 @@ function renderSources(refs) {
     link.href = ref.url;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = "[" + (index + 1) + "] " + ref.title + " ↗";
+    link.textContent = "[" + (index + 1) + "] " + sourceLabel(ref) + " ↗";
     sourcesView.append(link);
   });
 }
@@ -90,8 +112,8 @@ async function submit(question) {
     if (provider.value === "browser") {
       data = await askLocally(
         userQuestion, state.turns.slice(-4),
-        (answer) => {
-          waiting.content.textContent = answer;
+        (answer, refs = []) => {
+          showAnswer(waiting.content, answer, refs);
           thread.scrollTop = thread.scrollHeight;
         },
         (message) => { status.textContent = message; }
@@ -111,27 +133,15 @@ async function submit(question) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
-      data = await parseChatResponse(response, ({ answer }) => {
-        if (answer) waiting.content.textContent = answer;
+      data = await parseChatResponse(response, ({ answer, sources }) => {
+        if (answer) showAnswer(waiting.content, answer, sources || []);
         thread.scrollTop = thread.scrollHeight;
       });
     }
-    waiting.content.textContent = data.answer;
-    renderSources(Array.isArray(data.sources) ? data.sources : []);
-    if (Array.isArray(data.sources) && data.sources.length) {
-      const citations = document.createElement("div");
-      citations.className = "answer-sources";
-      data.sources.forEach((source, index) => {
-        if (!/^https:\/\//.test(source.url)) return;
-        const link = document.createElement("a");
-        link.href = source.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "[" + (index + 1) + "] evidence ↗";
-        citations.append(link);
-      });
-      waiting.bubble.append(citations);
-    }
+    const refs = Array.isArray(data.sources) ? data.sources : [];
+    showAnswer(waiting.content, data.answer, refs);
+    renderSources(refs);
+    answerSources(waiting.bubble, refs);
     state.turns.push({ role: "user", content: userQuestion }, { role: "assistant", content: data.answer.slice(0, 900) });
     state.turns = state.turns.slice(-8);
     status.textContent = "answered via " + data.model;

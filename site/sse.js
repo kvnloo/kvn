@@ -25,11 +25,18 @@ export async function parseChatResponse(response, onProgress = () => {}) {
     if (event === "sources") {
       sources = Array.isArray(data.sources) ? data.sources : [];
       model = typeof data.model === "string" ? data.model : "";
+    } else if (event === "final") {
+      if (typeof data.answer === "string") answer = data.answer;
     } else if (event === "error") {
       throw new Error(data.error || "Streaming inference failed.");
     } else {
-      const delta = data.response ?? data.choices?.[0]?.delta?.content ?? "";
-      if (typeof delta === "string") answer += delta;
+      // Our Worker sends {delta}; raw Workers AI frames carry an OpenAI delta plus a legacy
+      // `response` that is a JSON number for digit tokens, so never drop non-strings.
+      const choice = data.choices?.[0]?.delta;
+      const delta = typeof data.delta === "string" ? data.delta
+        : typeof choice?.content === "string" ? choice.content
+        : choice ? "" : data.response ?? "";
+      answer += String(delta);
     }
     onProgress({ answer, sources, model });
   }

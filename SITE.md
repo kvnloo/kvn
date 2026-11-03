@@ -78,17 +78,30 @@ cannot be sent through this site's backend.
 - This is not a private messaging channel, and the AI is not Kevin himself.
 - Citation links are attached by the retrieval layer; citations appearing in
   generated prose are model-generated and should be checked against those links.
-- Lexical retrieval is an initial baseline, not embeddings or live GitHub search.
-  Answer coverage is limited to the currently verified public snapshot.
+- Retrieval is lexical (BM25 with light stemming, project-name and intent boosts,
+  and catalog chunks for "what has he built" questions), not embeddings or live
+  GitHub search. Answer coverage is limited to the verified public snapshot plus
+  the live Boplog project index.
+- Answers render as a small Markdown subset built from DOM nodes (never
+  innerHTML). `[n]` markers link to the nth source. If a model gives no citation
+  at all, the Worker (or the browser, for local AI) attaches a marker to each
+  sentence that clearly overlaps one source, and leaves the rest uncited.
 
 Streaming answers are enabled on the free Cloudflare default using SSE.
 Local browser inference is available as a visitor-selected alternative. It
-uses WebLLM 0.2.86 and a quantized Llama 3.2 1B model. Inference runs entirely
+uses WebLLM 0.2.86 with Qwen3 4B (q4f16, about 3.4 GB of GPU memory), falling
+back to Qwen3 1.7B when the larger model can't load. Inference runs entirely
 in the visitor's WebGPU browser, with no API key and no Worker AI usage.
 First use downloads model weights and a model runtime from MLC/CDN; not every
-browser has WebGPU or enough device memory. This path still uses the exact
-same deterministic public evidence index and citations.
+browser has WebGPU or enough device memory. This path uses the same public
+evidence index and citations, with fewer and shorter sources to fit the small
+model's 4k context.
+
+## Answer quality
+
+`eval/` measures every model change against 36 questions; see
+[eval/README.md](eval/README.md) for how it works and the latest scores.
 
 Future improvements:
-expand authorized public-source sync; add evals for evidence accuracy;
+expand authorized public-source sync;
 introduce site analytics only with explicit privacy guardrails.

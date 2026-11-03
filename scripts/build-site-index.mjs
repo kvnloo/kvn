@@ -4,7 +4,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const docs = ["ENTRY.md", "OPINIONS.md", "TOOLS.md", "VOICE.md"];
+// ENTRY.md is the answer contract for agents (instructions, not evidence about Kevin), so the
+// chat folds it into its system prompt instead of retrieving it as a source.
+const docs = ["OPINIONS.md", "TOOLS.md", "VOICE.md", "CONTRIBUTIONS.md"];
 const base = "https://github.com/kvnloo/kvn/blob/main/";
 const chunks = [];
 
@@ -56,6 +58,25 @@ for (const path of docs) {
   addSections(path, content, "distillation", base + path);
 }
 
+// Catalog chunks answer "what has he built?" / "what does he think?" questions, which match
+// no single section: one line per section, linking back to the living doc.
+function addCatalog(path, title, intro) {
+  const raw = readFileSync(join(root, path), "utf8");
+  const lines = raw.split(/\n(?=##\s)/g).slice(1).map((section) => {
+    const name = section.match(/^##\s+(.+)$/m)?.[1]?.trim();
+    const first = section.replace(/^##\s+.+$/m, "").trim().split(/\n\s*\n/)
+      .find((paragraph) => paragraph && !/^https?:\/\//.test(paragraph) && !/^Evidence:/.test(paragraph));
+    if (!name || !first || /^Not included/i.test(name)) return null;
+    const sentence = first.replace(/\s+/g, " ").replace(/`/g, "").match(/^.*?[.!?](\s|$)/)?.[0]?.trim() || first.slice(0, 160);
+    const short = sentence.length > 130 ? sentence.slice(0, 130).replace(/\s+\S*$/, "") + "…" : sentence;
+    const url = section.match(/https:\/\/[^\s·)]+/)?.[0];
+    return "- " + name + ": " + short + (url ? " " + url : "");
+  }).filter(Boolean);
+  chunks.push({ id: path + ":catalog", path, title, url: base + path, type: "distillation", text: intro + "\n" + lines.join("\n") });
+}
+addCatalog("TOOLS.md", "Catalog of Kevin's public tools and projects", "Where to explore Kevin's public work: GitHub https://github.com/kvnloo · X https://x.com/_kvnloo · Boplog build log of every public repo he has committed to https://kvnloo.github.io/boplog/ (Atom feed https://kvnloo.github.io/boplog/feed.xml, JSON https://kvnloo.github.io/boplog/data/manifest.json) · contribution visualization https://kvnloo.github.io/gh-contrib-archive/ · portfolio https://kvnloo.github.io/portfolio/.\nCurated public tools and repositories Kevin owns or maintains, including this /kvn site itself (full details per project in TOOLS.md):");
+addCatalog("OPINIONS.md", "Catalog of Kevin's public viewpoints", "Compact map of Kevin's publicly evidenced viewpoints (details and sources in OPINIONS.md):");
+
 const manifest = JSON.parse(readFileSync(join(root, "content/MANIFEST.json"), "utf8"));
 if (!Array.isArray(manifest.files)) throw new Error("Expected manifest.files array");
 for (const item of manifest.files) {
@@ -71,4 +92,5 @@ const data = { schemaVersion: 1, digest, sourceRepository: "https://github.com/k
 mkdirSync(join(root, "site"), { recursive: true });
 writeFileSync(join(root, "site/knowledge.json"), JSON.stringify(data, null, 2) + "\n");
 copyFileSync(join(root, "worker/search.js"), join(root, "site/search.js"));
+copyFileSync(join(root, "worker/prompt.js"), join(root, "site/prompt.js"));
 console.log("Generated " + chunks.length + " public evidence chunks (" + digest + ")");
