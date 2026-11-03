@@ -1,0 +1,266 @@
+{
+  "schema": "kvn.resume.v1",
+  "updated": "2026-11-03",
+  "about": "Public, source-backed resume facts for Kevin Rajan. Presentation layers (the hermes-jobapp canvas, the kvnloo/cv PDFs) read from this file. No phone number or email: those live only in the private resume sources.",
+  "name": "Kevin Rajan",
+  "handle": "kvnloo",
+  "headline": "Software engineer building agent products: Hermes runtime reliability, native agent UX, and the evidence systems around them.",
+  "location": "Chicago, IL",
+  "links": [
+    { "label": "github.com/kvnloo", "url": "https://github.com/kvnloo" },
+    { "label": "x.com/_kvnloo", "url": "https://x.com/_kvnloo" },
+    { "label": "linkedin.com/in/kevinsrajan", "url": "https://linkedin.com/in/kevinsrajan" },
+    { "label": "boplog", "url": "https://kvnloo.github.io/boplog/" }
+  ],
+  "roles": [
+    {
+      "id": "zero",
+      "org": "zero, LLC",
+      "title": "Founder & CEO",
+      "start": "2024-06",
+      "end": null,
+      "place": "Remote",
+      "summary": "Solo founder. Builds agent infrastructure and products on top of Hermes Agent and other harnesses.",
+      "bullets": [
+        "Landed 41 commits on NousResearch/hermes-agent main (Aug to Oct 2026) across runtime correctness, context compaction safety, kanban, desktop, and platform adapters.",
+        "Built Hermes Tern, a native terminal UI for Hermes (agent orb, plan review, BTW threads, forked sessions in sibling panes, OpenUI previews, voice).",
+        "Built Dash, an Expo phone app and Bun bridge over Tailscale that keeps one live thread per harness (Hermes, OMP, Codex, Claude Code, Grok); in daily use.",
+        "Designed z0, a registry and installer for a personal agent stack (z0intelligence, AODL, Tokenomics, z0evals), with z0archy as its zoomable architecture explorer.",
+        "Runs a verified open-source loop: leased claims, isolated worktrees, evidence receipts, independent verification, human merge."
+      ]
+    },
+    {
+      "id": "outlier",
+      "org": "Outlier (Scale AI)",
+      "title": "LLM Training Specialist",
+      "start": "2025-01",
+      "end": null,
+      "place": "Remote",
+      "summary": "Rubric design, adversarial reasoning prompts, and preference ranking for LLM training.",
+      "bullets": [
+        "Designed and applied detailed rubrics for LLM evaluation; wrote logic, math, and physics prompts to elicit reasoning failures for process-supervision feedback.",
+        "Large-scale preference labeling and comparative ranking (RLHF, DPO, RLAIF); multimodal and tool-use evaluations."
+      ]
+    },
+    {
+      "id": "sabbatical",
+      "org": "Sabbatical",
+      "title": "Self-directed ultralearning",
+      "start": "2023-07",
+      "end": "2024-06",
+      "place": "Naperville, IL",
+      "summary": "A self-run research, implement, analyze, iterate loop for skill acquisition.",
+      "bullets": [
+        "Reached the top 1 to 5% in Kovaak's, Valorant, and Apex by benchmarking and removing training bottlenecks."
+      ]
+    },
+    {
+      "id": "slalom",
+      "org": "Slalom Consulting",
+      "title": "Senior Consultant, Technology Enablement",
+      "start": "2021-06",
+      "end": "2023-07",
+      "place": "Chicago, IL",
+      "summary": "Platform and DevOps modernization for a $4B+ revenue finance client across 12 teams.",
+      "bullets": [
+        "Promoted Agile, DevOps, and CI/CD with AWS, Jenkins, Terraform, and Vault.",
+        "Built pipelines that publish biweekly golden Windows and RHEL AMIs.",
+        "Ran DevOps onboarding for 500+ new hires.",
+        "Product owner for a preventative-health platform concept."
+      ]
+    },
+    {
+      "id": "synchrony",
+      "org": "Synchrony Financial",
+      "title": "Software Engineer",
+      "start": "2019-05",
+      "end": "2019-08",
+      "place": "Chicago, IL",
+      "summary": "Software engineering role.",
+      "bullets": []
+    },
+    {
+      "id": "amazon",
+      "org": "Amazon Web Services",
+      "title": "Software Developer, EC2 Fargate",
+      "start": "2018-08",
+      "end": "2019-01",
+      "place": "Seattle, WA",
+      "summary": "Fargate capacity and container health.",
+      "bullets": [
+        "Pool metrics that let developers see the state of customer container issues.",
+        "Automatic pool management that detects customer traffic spikes."
+      ]
+    },
+    {
+      "id": "hcsc",
+      "org": "BlueCross BlueShield (HCSC)",
+      "title": "Technology Enterprise Architect",
+      "start": "2018-06",
+      "end": "2018-08",
+      "place": "Chicago, IL",
+      "summary": "Individual contributor projects feeding HCSC's enterprise data strategy.",
+      "bullets": []
+    },
+    {
+      "id": "prenosis",
+      "org": "Prenosis",
+      "title": "iOS / UX Engineer",
+      "start": "2017-07",
+      "end": "2018-02",
+      "place": "Champaign, IL",
+      "summary": "Physician iOS app built from scratch.",
+      "bullets": [
+        "Labs, vitals, and imaging per patient; the Prenosis Number risk score to order rounds; history and prescriptions."
+      ]
+    },
+    {
+      "id": "wipro",
+      "org": "Wipro",
+      "title": "Software Engineering Intern",
+      "start": "2016-05",
+      "end": "2016-07",
+      "place": "Chennai, India",
+      "summary": "IBM Cognos to Tableau data migration tooling.",
+      "bullets": []
+    },
+    {
+      "id": "bytebros",
+      "org": "ByteBros.",
+      "title": "Freelance iOS Contractor / UI Designer",
+      "start": "2016-01",
+      "end": "2016-07",
+      "place": "Champaign, IL",
+      "summary": "Peer-to-peer rental iOS app with Venmo/PayPal payments and Firebase.",
+      "bullets": []
+    }
+  ],
+  "projects": [
+    {
+      "id": "hermes-agent",
+      "name": "Hermes Agent",
+      "repo": "NousResearch/hermes-agent",
+      "kind": "upstream",
+      "summary": "41 commits on main; 194 PRs opened, 161 issues, 1,272 threads commented on.",
+      "details": [
+        "Runtime: cron reap before the one-shot early return; gateway startup-watchdog leases across state.db maintenance; config inode/ctime signatures.",
+        "Context safety: operational notifications excluded from the compaction tail anchor; copied compression artifacts blocked before effectful dispatch.",
+        "Desktop: native Wayland fullscreen painting; remote SSH watchdog; deep-rewind ownership and retry consent.",
+        "Landed by Teknium, kshitij, brooklyn, and jonny."
+      ]
+    },
+    {
+      "id": "hermes-tern",
+      "name": "Hermes Tern",
+      "repo": "kvnloo/hermes-tern",
+      "kind": "hermes",
+      "summary": "Native terminal UI for Hermes; 586 commits ahead of the alt-glitch base.",
+      "details": [
+        "Agent orb, plan review and todo HUD, BTW threads, forked sessions in sibling panes.",
+        "OpenUI previews, LSP tool cards, table charts, media delivery, voice, Vim composer, model hub."
+      ]
+    },
+    {
+      "id": "dash",
+      "name": "Dash",
+      "repo": "kvnloo/dash",
+      "kind": "hermes",
+      "summary": "Phone app with one live thread per agent harness.",
+      "details": [
+        "Expo app plus a Bun bridge over Tailscale.",
+        "Hermes, OMP, Codex, Claude Code, and Grok threads from one phone."
+      ]
+    },
+    {
+      "id": "z0",
+      "name": "z0",
+      "repo": "kvnloo/z0",
+      "kind": "infra",
+      "summary": "Personal AI infrastructure that makes frontier models do less: a map, installer, and contract registry.",
+      "details": [
+        "Evidence is not a claim, a claim is not authority, authority is not an action, an action is not an outcome.",
+        "Don't execute twice when the prior execution is uncertain."
+      ]
+    },
+    {
+      "id": "z0archy",
+      "name": "z0archy",
+      "repo": "kvnloo/z0archy",
+      "kind": "infra",
+      "summary": "Zoomable architecture explorer compiled from z0 declarations and exact Git refs.",
+      "details": [
+        "Semantic zoom from world to logic to concepts to source evidence.",
+        "Hosted mode resolves branches to immutable SHAs; local mode watches worktrees."
+      ]
+    },
+    {
+      "id": "quackles",
+      "name": "Quackles",
+      "repo": "kvnloo/quackles",
+      "kind": "product",
+      "summary": "Microduck product study: Blender Cycles plates in five themes with a 201 MP deep-zoom master.",
+      "details": [
+        "Poster homage to the Hermes Agent poster; photoreal robot, never-blur inspection.",
+        "The blue plate is the backdrop of this canvas."
+      ]
+    },
+    {
+      "id": "fframestudio",
+      "name": "fframestudio",
+      "repo": "kvnloo/fframestudio",
+      "kind": "product",
+      "summary": "Film studio over fframes with an ACP assistant (Hermes, Claude Code, Codex, OpenCode).",
+      "details": []
+    },
+    {
+      "id": "hermes-maintainer",
+      "name": "hermes-maintainer",
+      "repo": "kvnloo/hermes-maintainer",
+      "kind": "hermes",
+      "summary": "Local-first backlog graph for hermes-agent: problem families, fix atoms, survivor and superseded PRs.",
+      "details": ["Read-only by design; evidence before closure."]
+    },
+    {
+      "id": "gh-contrib-archive",
+      "name": "gh-contrib-archive",
+      "repo": "kvnloo/gh-contrib-archive",
+      "kind": "infra",
+      "summary": "Public-safe ledger of every public comment, review, issue, and PR.",
+      "details": []
+    },
+    {
+      "id": "kvn",
+      "name": "/kvn",
+      "repo": "kvnloo/kvn",
+      "kind": "hermes",
+      "summary": "Public knowledge base any Hermes can load; the source of this file.",
+      "details": []
+    }
+  ],
+  "openSource": {
+    "collected": "2026-11-02",
+    "source": "GitHub search API, public data, author:kvnloo",
+    "mergedExternal": 151,
+    "mergedExternalRepos": 44,
+    "highlights": ["o8", "Noctalia", "OpenMUSE", "Oh My Pi", "CUA", "NOOP", "T3 Code", "God's Eye View", "rpi-image-gen", "Omarchy", "OpenMC", "Newton", "OpenROAD", "ROCm ATOM", "ActivityWatch", "CopilotKit", "OpenClaw", "Crush", "AG-UI", "MCAP", "gz-sensors", "PyPSA", "CPlantBox", "BOINC", "miller"]
+  },
+  "education": [
+    {
+      "school": "University of Illinois Urbana-Champaign",
+      "degree": "B.S. Engineering Physics, Minor in Computer Science",
+      "end": "2020-05",
+      "notes": "Certificate in Technology Commercialization. HackIllinois iOS developer, open source coordinator, and sponsorship staff."
+    }
+  ],
+  "skills": {
+    "Agents": ["Hermes Agent", "Claude Code", "Codex", "OpenCode", "ACP", "MCP"],
+    "Languages": ["TypeScript", "Python", "Swift", "C++", "C", "Java"],
+    "Product": ["React", "React Native / Expo", "Electron", "Ink TUIs", "WebGL / three.js", "Blender"],
+    "Infra": ["AWS", "Terraform", "Jenkins", "Vault", "Kubernetes (k3s)", "Tailscale"],
+    "Design": ["Figma", "Photoshop", "Sketch"]
+  },
+  "sources": [
+    "kvnloo/cv (past roles, reconciled from the Obsidian resume folder)",
+    "hermes-jobapp docs/WORK-REPORT-2026-11-03.md (live GitHub counts, 2026-11-02/03)"
+  ]
+}
