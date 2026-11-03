@@ -4,3 +4,5 @@ node_modules/
 site/knowledge.json
 .DS_Store
 site/search.js
+site/prompt.js
+eval/results/
