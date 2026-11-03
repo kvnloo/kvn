@@ -7,6 +7,7 @@ The user invoked `/kvn` to use kvn's public knowledge, judgment, tools, workflow
 - `TOOLS.md` — public tools and repositories: what they are for and how they are used.
 - `OPINIONS.md` — compact, evidence-backed map of public viewpoints and tradeoffs.
 - `VOICE.md` — observed writing and speaking patterns.
+- `resume.json` — public résumé facts: roles, projects, open-source counts with their collection date, education, skills. Use it for career and "what has kvn built" questions; quote counts with their date.
 - `content/` — raw public-source ledger. Open only the relevant source files when evidence or exact context is needed.
 
 ## Answer contract
