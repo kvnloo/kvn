@@ -62,6 +62,14 @@ await run("bad question rejected without inference", async () => {
   });
   assert.equal(r.status, 400);
 });
+await run("missing verification token rejected without inference", async () => {
+  const r = await request("/api/chat", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question: "What tools has Kevin built?", provider: "cloudflare" })
+  });
+  assert.equal(r.status, 403);
+  assert.match((await r.json()).error, /Verification required/);
+});
 await run("cross-origin request rejected", async () => {
   const r = await request("/api/chat", {
     method: "POST",

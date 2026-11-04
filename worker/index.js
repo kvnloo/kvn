@@ -1,4 +1,5 @@
 import { getPublicProjectIndex } from "./public-projects.js";
+import { readChatInput } from "./request.js";
 import { answerText, normalizeStream, shapeInput } from "./inference.js";
 import { buildMessages, cleanHistory } from "./prompt.js";
 import { autoCite, retrieveForTurn } from "./search.js";
@@ -80,16 +81,9 @@ async function chat(request, env) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return reply({ error: "Cross-origin requests are disabled." }, 403);
   if (!request.headers.get("content-type")?.includes("application/json")) return reply({ error: "Expected JSON." }, 415);
-  if (Number(request.headers.get("content-length") || 0) > 12000) return reply({ error: "Request too large." }, 413);
-
-  let input;
-  try {
-    const raw = await request.text();
-    if (raw.length > 12000) return reply({ error: "Request too large." }, 413);
-    input = JSON.parse(raw);
-  } catch {
-    return reply({ error: "Malformed request." }, 400);
-  }
+  const parsed = await readChatInput(request);
+  if (parsed.error) return reply({ error: parsed.error }, parsed.status);
+  const input = parsed.input;
 
   const question = typeof input?.question === "string" ? input.question.trim() : "";
   const provider = input?.provider || "cloudflare";

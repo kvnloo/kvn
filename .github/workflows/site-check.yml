@@ -4,6 +4,7 @@ on:
     paths:
       - "site/**"
       - "worker/**"
+      - "tests/**"
       - "scripts/**"
       - "content/**"
       - "*.md"
@@ -14,6 +15,7 @@ on:
     paths:
       - "site/**"
       - "worker/**"
+      - "tests/**"
       - "scripts/**"
       - "content/**"
       - "*.md"
