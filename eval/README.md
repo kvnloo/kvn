@@ -10,7 +10,7 @@ node eval/run.mjs --model @cf/qwen/qwen3-30b-a3b-fp8 --stream --judge   # the de
 node eval/run.mjs --model groq:openai/gpt-oss-120b --judge               # any free-tier provider
 node eval/run.mjs --only who,hermes,inject --judge                        # a few questions
 node eval/run.mjs --byo groq --model groq:qwen/qwen3.8-27b --judge         # the visitor-key path
-node eval/run.mjs --local --model ollama:qwen3:4b-instruct-2507-q4_K_M --judge  # the in-browser path
+node eval/run.mjs --local --model ollama:qwen3:4b-instruct-2507-q4_K_M --judge  # local-planner surrogate, NOT WebLLM
 node eval/run.mjs --judge --regrade <tag> [--ids a,b]                    # re-judge missing/listed rows
 node eval/report.mjs [tag ...]                                            # compare runs
 node eval/serve.mjs --port 8847                                           # click through the real UI
@@ -95,6 +95,16 @@ screening only.
 Qwen3 30B stays the free default: it ties Gemma 4 on quality at half the neurons and latency.
 Groq's qwen3.8-27b replaced gpt-oss-120b as the Groq default. Qwen3 4B replaced Llama 3.2 1B
 in the browser.
+
+## Runtime and score limits
+
+The configured browser default is `Qwen3-4B-q4f16_1-MLC` (hybrid Qwen3),
+not the `qwen3:4b-instruct-2507-q4_K_M` Ollama surrogate in the table. Exact
+WebLLM inference has not passed acceptance; do not use the surrogate score as
+proof of browser quality, latency or compatibility. The smaller 1.7B path also
+needs exact-runtime acceptance. The score table is historical screening, not a
+statistical ranking: inspect per-run judge identity, graded count and errors
+using `eval/report.mjs` before comparing. Missing grades are not zeroes or passes.
 
 ## Findings that shaped the code
 

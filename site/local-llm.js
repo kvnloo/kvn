@@ -3,7 +3,8 @@
 import { buildMessages } from "./prompt.js";
 import { autoCite, retrieveForTurn } from "./search.js";
 
-// Measured with eval/ (local stand-ins via Ollama): Qwen3 4B scored 9.3/10, Llama 3.2 1B 4.9.
+// Ollama instruct-2507 4B scored 9.28/10; it is NOT these WebLLM hybrid weights.
+// Exact in-browser model quality/compatibility has not yet been qualified.
 // Devices that can't fit the 4B (~3.4 GB of GPU memory) fall back to Qwen3 1.7B (~2 GB).
 const MODELS = ["Qwen3-4B-q4f16_1-MLC", "Qwen3-1.7B-q4f16_1-MLC"];
 let MODEL = MODELS[0];
