@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.dev.vars
+site/knowledge.json
+.DS_Store
+site/search.js
+site/prompt.js
+eval/results/
