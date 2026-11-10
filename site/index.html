@@ -59,6 +59,7 @@
               <option value="browser">Qwen3 4B · on-device (WebGPU)</option>
               <option value="groq">Groq · bring a key</option>
               <option value="openrouter">OpenRouter · bring a key</option>
+              <option value="hermes">Your Hermes · local ACP bridge</option>
             </select>
             <div id="byo-fields" hidden>
               <label for="api-key">Your API key</label>
@@ -67,6 +68,13 @@
               <input id="model" autocomplete="off" spellcheck="false">
               <small>Key goes through this site's Worker to your selected provider. It is never saved by this app.</small>
             </div>
+            <div id="hermes-fields" hidden>
+              <label for="pairing">Pairing code</label>
+              <input id="pairing" autocomplete="off" spellcheck="false" placeholder="43190.xxxxxxxx">
+              <button id="hermes-connect" type="button" class="connect">Connect</button>
+              <small id="hermes-state">Run <code>node bridge.mjs --origin <span class="origin"></span></code> from <a href="https://github.com/kvnloo/kvn/tree/main/site/acp" target="_blank" rel="noopener noreferrer">site/acp</a>. Your agent, keys and models stay on your machine; only the question and its public sources go to it. The page offers your agent no files or terminal, but Hermes keeps its own tools; it asks here before using one, and you can deny.</small>
+            </div>
+            <dialog id="permission"><p>Your Hermes asks to run a tool:</p><pre id="permission-what"></pre><form method="dialog" id="permission-options"></form></dialog>
             <p class="hint">Cloud inference is quota-limited. Local AI is free and private: it downloads a model to your device once (~2.3 GB, or ~1 GB on smaller GPUs) and needs WebGPU. BYO keys are optional.</p>
           </div>
           <div class="panel">

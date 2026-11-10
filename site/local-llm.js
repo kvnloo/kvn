@@ -12,7 +12,7 @@ const LIBRARY = "https://esm.run/@mlc-ai/web-llm@0.2.86";
 let enginePromise = null;
 let indexPromise = null;
 
-function loadIndex() {
+export function loadIndex() {
   if (!indexPromise) {
     indexPromise = fetch("/knowledge.json").then(async (response) => {
       if (!response.ok) throw new Error("Public evidence index is unavailable.");
