@@ -50,7 +50,8 @@ process.stdin.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\\n'))
   class PageSocket extends WebSocket { constructor(url, protocols) { super(url, { protocols, headers: { origin } }); } }
   try {
     await new Promise((r) => setTimeout(r, 500));
-    const info = await connectHermes({ ...parsePairing(`${port}.${token}`), WebSocketImpl: PageSocket }, () => assert.fail("no tools expected"));
+    let closed = false;
+    const info = await connectHermes({ ...parsePairing(`${port}.${token}`), WebSocketImpl: PageSocket }, () => assert.fail("no tools expected"), () => { closed = true; });
     assert.equal(info.agent.title, "Hermes");
     const seen = [];
     const result = await askHermes("Tell me about garden-room, the WebXR garden planner", [], (answer) => seen.push(answer));
@@ -58,6 +59,10 @@ process.stdin.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\\n'))
     assert.deepEqual(seen, ["Kevin built ", "Kevin built garden-room [1]."]);
     assert.equal(result.sources[0].url, chunk.url);
     assert.match(result.model, /Hermes · your machine/);
+    bridge.kill("SIGINT");
+    await new Promise((r) => setTimeout(r, 500));
+    assert.ok(closed, "page learns the bridge went away");
+    await assert.rejects(askHermes("again?", [], () => {}), /Connect your Hermes first/);
   } finally {
     globalThis.fetch = realFetch;
     bridge.kill("SIGINT");

@@ -23,6 +23,7 @@ function setProvider() {
   const isByo = provider.value === "groq" || provider.value === "openrouter";
   byoFields.hidden = !isByo;
   hermesFields.hidden = provider.value !== "hermes";
+  state.turns = []; // A new provider starts a new context; earlier turns are not shared with it.
   model.value = provider.value === "groq" ? "qwen/qwen3.8-27b" : "openrouter/free";
   apiKey.value = "";
 }
@@ -40,7 +41,8 @@ function askPermission({ params, choose }) {
     button.textContent = option.name;
     return button;
   }));
-  dialog.onclose = () => choose(dialog.returnValue || null);
+  const offered = new Set((params?.options || []).map((option) => option.optionId));
+  dialog.onclose = () => { dialog.onclose = null; choose(offered.has(dialog.returnValue) ? dialog.returnValue : null); };
   dialog.returnValue = "";
   dialog.showModal();
 }
@@ -50,7 +52,12 @@ async function connect() {
   if (!pair) { hermesState.textContent = "That is not a pairing code. The bridge prints one like 43190.Ab3…"; return; }
   hermesState.textContent = "connecting…";
   try {
-    const { agent } = await connectHermes(pair, askPermission);
+    const { agent } = await connectHermes(pair, askPermission, () => {
+      const dialog = $("#permission");
+      if (dialog.open) dialog.close(""); // pending request is denied, never left dangling
+      hermesState.textContent = "disconnected · start the bridge again and paste the new code";
+      status.textContent = "your Hermes · disconnected";
+    });
     hermesState.textContent = "connected to " + (agent?.title || agent?.name || "your agent") + (agent?.version ? " " + agent.version : "");
     status.textContent = "your Hermes · connected";
   } catch (error) {

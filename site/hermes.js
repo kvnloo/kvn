@@ -20,11 +20,11 @@ export function hermesPrompt(question, history, hits) {
 
 let client = null;
 
-export async function connectHermes(pairing, onPermission) {
+export async function connectHermes(pairing, onPermission, onClose = () => {}) {
   client?.close();
   const next = new AcpClient(pairing);
   next.addEventListener("permission", (event) => onPermission(event.detail));
-  next.addEventListener("close", () => { if (client === next) client = null; });
+  next.addEventListener("close", () => { if (client === next) { client = null; onClose(); } });
   const info = await next.start();
   client = next;
   return info;
