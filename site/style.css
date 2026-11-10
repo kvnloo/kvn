@@ -17,3 +17,4 @@ ol.answer-sources{list-style:none;padding:0;margin:10px 0 0;counter-reset:none}
 ol.answer-sources li{display:flex;align-items:center;gap:6px;font-size:11px;color:#86a093}
 ol.answer-sources li::before{content:attr(value);display:inline-block;min-width:1.4em;padding:0 .3em;border-radius:4px;text-align:center;font-size:10px;color:#0b1720;background:#6f8f55}
 ol.answer-sources a{font-size:11px}
+.panel .connect{margin-top:10px;background:#b8f94b;color:#11201d;border:0;border-radius:6px;padding:9px 14px;font-size:12px;font-weight:700}.panel code{font-size:11px;color:#cfe3b0;overflow-wrap:anywhere}#permission{background:#10202d;color:#dce8e8;border:1px solid #b8f94b;border-radius:12px;max-width:420px}#permission pre{white-space:pre-wrap;font-size:12px}#permission-options{display:flex;gap:8px;flex-wrap:wrap}#permission-options button{background:#172a37;color:#dce8e8;border:1px solid #2a4451;border-radius:6px;padding:8px 12px}

@@ -1,6 +1,7 @@
 import { askLocally } from "./local-llm.js";
 import { renderMarkdown } from "./render.js";
 import { parseChatResponse } from "./sse.js";
+import { askHermes, connectHermes, parsePairing } from "./hermes.js";
 const $ = (selector) => document.querySelector(selector);
 const form = $("#ask");
 const thread = $("#thread");
@@ -11,17 +12,60 @@ const apiKey = $("#api-key");
 const model = $("#model");
 const byoFields = $("#byo-fields");
 const send = $("#send");
+const hermesFields = $("#hermes-fields");
+const pairing = $("#pairing");
+const hermesState = $("#hermes-state");
+document.querySelectorAll(".origin").forEach((node) => { node.textContent = location.origin; });
 const status = $("#status");
 const state = { turns: [], busy: false, turnstileToken: "", turnstileWidget: null };
 
 function setProvider() {
   const isByo = provider.value === "groq" || provider.value === "openrouter";
   byoFields.hidden = !isByo;
+  hermesFields.hidden = provider.value !== "hermes";
   model.value = provider.value === "groq" ? "qwen/qwen3.8-27b" : "openrouter/free";
   apiKey.value = "";
 }
 provider.addEventListener("change", setProvider);
 setProvider();
+
+// Every tool request from the visitor's Hermes is shown to them; nothing is auto-approved.
+function askPermission({ params, choose }) {
+  const dialog = $("#permission");
+  $("#permission-what").textContent = params?.toolCall?.title || params?.toolCall?.kind || "a tool";
+  const options = $("#permission-options");
+  options.replaceChildren(...(params?.options || []).map((option) => {
+    const button = document.createElement("button");
+    button.value = option.optionId;
+    button.textContent = option.name;
+    return button;
+  }));
+  dialog.onclose = () => choose(dialog.returnValue || null);
+  dialog.returnValue = "";
+  dialog.showModal();
+}
+
+async function connect() {
+  const pair = parsePairing(pairing.value);
+  if (!pair) { hermesState.textContent = "That is not a pairing code. The bridge prints one like 43190.Ab3…"; return; }
+  hermesState.textContent = "connecting…";
+  try {
+    const { agent } = await connectHermes(pair, askPermission);
+    hermesState.textContent = "connected to " + (agent?.title || agent?.name || "your agent") + (agent?.version ? " " + agent.version : "");
+    status.textContent = "your Hermes · connected";
+  } catch (error) {
+    hermesState.textContent = error.message;
+  }
+}
+$("#hermes-connect").addEventListener("click", connect);
+const hashPair = /acp=([\w.-]+)/.exec(location.hash)?.[1];
+if (hashPair) {
+  history.replaceState(null, "", location.pathname);
+  pairing.value = hashPair;
+  provider.value = "hermes";
+  setProvider();
+  connect();
+}
 
 function addMessage(role, value) {
   const bubble = document.createElement("article");
@@ -109,7 +153,12 @@ async function submit(question) {
   const waiting = addMessage("assistant", "retrieving public evidence…");
   try {
     let data;
-    if (provider.value === "browser") {
+    if (provider.value === "hermes") {
+      data = await askHermes(userQuestion, state.turns.slice(-4), (answer, refs) => {
+        showAnswer(waiting.content, answer, refs);
+        thread.scrollTop = thread.scrollHeight;
+      });
+    } else if (provider.value === "browser") {
       data = await askLocally(
         userQuestion, state.turns.slice(-4),
         (answer, refs = []) => {
