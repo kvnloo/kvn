@@ -37,6 +37,7 @@ After a successful pull, read the full local copies of:
 - `TOOLS.md`
 - `OPINIONS.md`
 - `VOICE.md`
+- `resume.json` (for career, role, and project questions)
 
 Open matching files under `content/` only when the request needs primary-source evidence or fuller context.
 

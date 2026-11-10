@@ -93,6 +93,7 @@ remove items deleted from the manifest, and hash-sync the root docs.
 - `OPINIONS.md` — compact map of evidenced public viewpoints.
 - `VOICE.md` — stable public voice patterns.
 - `TOOLS.md` — curated public tools/repositories.
+- `resume.json` — public résumé facts (no phone or email). The hermes-jobapp canvas résumé and the `kvnloo/cv` PDFs present this data.
 - `content/` — raw public evidence.
 - `content/MANIFEST.json` — incremental ledger index.
 - `skills/kvn/SKILL.md` — thin Agent Skill.

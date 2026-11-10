@@ -8,7 +8,7 @@ import { homedir } from 'node:os';
 const OWNER = 'kvnloo';
 const REPO = 'kvn';
 const BRANCH = 'main';
-const ROOT_DOCS = ['ENTRY.md', 'TOOLS.md', 'OPINIONS.md', 'VOICE.md'];
+const ROOT_DOCS = ['ENTRY.md', 'TOOLS.md', 'OPINIONS.md', 'VOICE.md', 'resume.json'];
 
 const bases = [
   `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}`,
