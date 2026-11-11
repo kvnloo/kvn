@@ -88,13 +88,60 @@ test("free inference fails closed without Turnstile bindings", async () => {
   assert.match((await result.json()).error, /Turnstile/);
 });
 
-test("Turnstile validates hostname and single-use token", async (t) => {
+test("Turnstile rejects missing tokens and mismatched hostnames", async (t) => {
   const env = { ...makeEnv(), TURNSTILE_SITE_KEY: "site-key", TURNSTILE_SECRET: "test-secret" };
   const missing = await worker.fetch(post({ question: "warp Tizen" }), env);
   assert.equal(missing.status, 403);
   t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, hostname: "different.example" }));
   const mismatch = await worker.fetch(post({ question: "warp Tizen", turnstileToken: "token" }), env);
   assert.equal(mismatch.status, 403);
+});
+
+test("Turnstile rejection and verification failures never reach AI", async (t) => {
+  for (const outcome of ["rejected", "http-error", "network-error", "bad-json", "oversized-token"]) {
+    await t.test(outcome, async (t) => {
+      let inference = 0, verifications = 0;
+      const env = { ...makeEnv(), TURNSTILE_SITE_KEY: "test-site", TURNSTILE_SECRET: "test-only-secret" };
+      env.AI.run = async () => { inference++; return { response: "must not run" }; };
+      t.mock.method(globalThis, "fetch", async (url) => {
+        verifications++;
+        assert.equal(url, "https://challenges.cloudflare.com/turnstile/v0/siteverify");
+        if (outcome === "network-error") throw new Error("test-only-secret");
+        if (outcome === "http-error") return new Response("test-only-secret", { status: 503 });
+        if (outcome === "bad-json") return new Response("not JSON");
+        return Response.json({ success: false, "error-codes": ["timeout-or-duplicate"] });
+      });
+      const response = await worker.fetch(post({ question: "warp Tizen", turnstileToken: outcome === "oversized-token" ? "x".repeat(2049) : "test-token" }), env);
+      assert.equal(response.status, 403);
+      assert.equal(inference, 0);
+      assert.equal(verifications, outcome === "oversized-token" ? 0 : 1);
+      assert.ok(!(await response.text()).includes("test-only-secret"));
+    });
+  }
+});
+
+test("BYOK routes only to the selected allowlisted endpoint and bounds output tokens", async (t) => {
+  for (const [provider, endpoint] of [["groq", "https://api.groq.com/openai/v1/chat/completions"], ["openrouter", "https://openrouter.ai/api/v1/chat/completions"]]) {
+    await t.test(provider, async (t) => {
+      const env = makeEnv();
+      env.AI.run = () => assert.fail("BYOK must not use the owner's free AI binding");
+      let calls = 0;
+      t.mock.method(globalThis, "fetch", async (url, options) => {
+        calls++;
+        assert.equal(url, endpoint);
+        assert.equal(options.headers.authorization, "Bearer test-only-dummy-key");
+        const body = JSON.parse(options.body);
+        assert.equal(body.max_tokens, 700);
+        assert.equal(body.model, "test/model");
+        assert.ok(body.messages.some(m => m.content.includes("Tizen")));
+        return Response.json({ choices: [{ message: { content: "warp is a Tizen front end [1]." } }] });
+      });
+      const response = await worker.fetch(post({ question: "warp Tizen", provider, apiKey: "test-only-dummy-key", model: "test/model", endpoint: "https://unapproved.invalid" }), env);
+      assert.equal(response.status, 200);
+      assert.equal(calls, 1);
+      assert.ok(!(await response.text()).includes("test-only-dummy-key"));
+    });
+  }
 });
 
 test("status exposes configuration but never a secret", async () => {

@@ -34,6 +34,7 @@ export const hermesConnected = () => client !== null;
 
 export async function askHermes(question, history, onProgress) {
   if (!client) throw new Error("Connect your Hermes first: run the bridge and paste its pairing code.");
+  const active = client; // A disconnect/reconnect must not change this request's cleanup target.
   const hits = retrieveForTurn(question, history, await loadIndex(), 6);
   if (!hits.length) return { answer: NO_EVIDENCE, sources: [], model: "evidence-only" };
   const refs = hits.map((doc) => ({ title: doc.title, url: doc.url, type: doc.type }));
@@ -44,13 +45,13 @@ export async function askHermes(question, history, onProgress) {
       onProgress(answer, refs);
     }
   };
-  client.addEventListener("update", onUpdate);
+  active.addEventListener("update", onUpdate);
   try {
-    await client.prompt(hermesPrompt(question, history, hits));
+    await active.prompt(hermesPrompt(question, history, hits));
   } finally {
-    client.removeEventListener("update", onUpdate);
+    active.removeEventListener("update", onUpdate);
   }
   if (!answer.trim()) throw new Error("Your Hermes returned an empty response.");
-  const name = client.agent?.title || client.agent?.name || "Hermes";
+  const name = active.agent?.title || active.agent?.name || "Hermes";
   return { answer: autoCite(answer.trim(), hits), sources: refs, model: name + " · your machine (ACP)" };
 }

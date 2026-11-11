@@ -35,6 +35,7 @@ process.stdin.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\\n'))
   if (m.method === 'initialize') out({ id: m.id, result: { protocolVersion: 1, agentInfo: { name: 'hermes', title: 'Hermes', version: '9.9' } } });
   if (m.method === 'session/new') out({ id: m.id, result: { sessionId: 's1' } });
   if (m.method === 'session/prompt') {
+    if (m.params.prompt[0].text.includes('DISCONNECT_MARKER')) return;
     const sawEvidence = m.params.prompt[0].text.includes('WebXR garden planner');
     for (const text of ['Kevin built ', sawEvidence ? 'garden-room [1].' : 'nothing.'])
       out({ method: 'session/update', params: { sessionId: 's1', update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
@@ -59,7 +60,12 @@ process.stdin.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\\n'))
     assert.deepEqual(seen, ["Kevin built ", "Kevin built garden-room [1]."]);
     assert.equal(result.sources[0].url, chunk.url);
     assert.match(result.model, /Hermes · your machine/);
+    const interrupted = askHermes("Tell me about garden-room DISCONNECT_MARKER", [], () => {});
+    // Attach the assertion before disconnect so the rejection is always handled.
+    const rejected = assert.rejects(interrupted, /Connection closed/);
+    await new Promise((r) => setTimeout(r, 50));
     bridge.kill("SIGINT");
+    await rejected;
     await new Promise((r) => setTimeout(r, 500));
     assert.ok(closed, "page learns the bridge went away");
     await assert.rejects(askHermes("again?", [], () => {}), /Connect your Hermes first/);

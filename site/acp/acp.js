@@ -40,8 +40,15 @@ export class AcpClient extends EventTarget {
     const reply = result => this.send({ jsonrpc: '2.0', id: msg.id, result });
     const fail = (code, message) => this.send({ jsonrpc: '2.0', id: msg.id, error: { code, message } });
     if (msg.method === 'session/request_permission') {
-      // Always surfaced to the human; never auto-answered.
-      this.emit('permission', { params: msg.params, choose: optionId => reply(optionId ? { outcome: { outcome: 'selected', optionId } } : { outcome: { outcome: 'cancelled' } }) });
+      const connection = this.ws;
+      const options = Array.isArray(msg.params?.options) ? msg.params.options : [];
+      const offered = new Set(options.filter(o => typeof o?.optionId === 'string').map(o => o.optionId));
+      let answered = false;
+      this.emit('permission', { params: msg.params, choose: optionId => {
+        if (answered || this.ws !== connection || connection?.readyState !== 1) return;
+        answered = true;
+        reply(offered.has(optionId) ? { outcome: { outcome: 'selected', optionId } } : { outcome: { outcome: 'cancelled' } });
+      } });
       return;
     }
     fail(-32601, `${msg.method} is not offered by this page`);

@@ -5,11 +5,12 @@
 //
 // What it does: listens on 127.0.0.1 only, spawns `hermes acp` in a fresh empty temp
 // directory for each page connection, and relays ACP JSON-RPC frames between the page
-// and Hermes. Nothing else. No dependencies, no network calls of its own, no data saved.
+// and Hermes. No dependencies or outbound network calls of its own. Diagnostics stay
+// in a local log; the agent may write files in its working directory.
 //
 // Security: random pairing token per launch (sent as a WebSocket subprotocol), Origin
-// allowlist, loopback Host check, one connection at a time. Hermes still asks the page
-// for permission before running tools; the page shows those prompts to you.
+// allowlist, loopback Host check, one connection at a time. Not a sandbox: Hermes keeps
+// its native tools and approval policy. The page shows permission requests it receives.
 //
 // Options: --origin <url> (repeatable)  --port <n> (default 43190)
 //          --cmd "<command>" (default "hermes acp")  --cwd <dir> (default: new temp dir)
@@ -87,7 +88,21 @@ function session(socket) {
     if (Buffer.byteLength(out) + d.length > 1024 * 1024) return close('agent output limit');
     out += d;
     let i;
-    while ((i = out.indexOf('\n')) >= 0) { const line = out.slice(0, i).trim(); out = out.slice(i + 1); if (line) { if (line.includes('"error"')) { try { const m = JSON.parse(line); if (m.error) diag('rpc-error', JSON.stringify({ id: m.id, error: m.error })); } catch {} } socket.write(frame(Buffer.from(line))); } }
+    while ((i = out.indexOf('\n')) >= 0) {
+      const line = out.slice(0, i).trim(); out = out.slice(i + 1);
+      if (!line) continue;
+      let msg;
+      try { msg = JSON.parse(line); }
+      catch { diag('invalid-agent-output', line); continue; }
+      if (!msg || typeof msg !== 'object' || Array.isArray(msg)) continue;
+      if (msg.error) {
+        diag('rpc-error', JSON.stringify({ id: msg.id, error: msg.error }));
+        // Strip message AND data before crossing the machine/page boundary.
+        msg.error = { code: Number.isInteger(msg.error.code) ? msg.error.code : -32603,
+          message: 'Agent request failed; see the local bridge log.' };
+      }
+      send(msg);
+    }
   });
   child.stderr.on('data', d => { diag('stderr', d); send({ jsonrpc: '2.0', method: '_bridge/stderr', params: { text: `Agent diagnostic output withheld from the page; see ${path.basename(logFile)} on your machine.` } }); });
   function send(obj) { if (!closed) socket.write(frame(Buffer.from(JSON.stringify(obj)))); }
@@ -146,6 +161,6 @@ server.listen(port, '127.0.0.1', () => {
   console.log(`  allowed pages: ${[...origins].join(', ')}`);
   console.log(`\n  pairing code:  ${pair}\n`);
   for (const o of origins) if (!o.includes('localhost')) console.log(`  or open: ${o}/#acp=${pair}`);
-  console.log('\n  Ctrl+C to stop. Hermes will ask the page before it runs any tool.\n');
+  console.log('\n  Ctrl+C to stop. Not a sandbox: Hermes retains its native tools and approval policy.\n');
 });
 process.on('SIGINT', () => process.exit(0));
