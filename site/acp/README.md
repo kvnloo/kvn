@@ -19,6 +19,10 @@ node site/acp/bridge.mjs --origin https://<the page you opened>
   Only offered option IDs are accepted, once per callback, on the original connection. Other choices cancel.
 - Agent stderr, non-JSON stdout diagnostics, and JSON-RPC error details go to a local log created with mode
   0600. The bridge replaces RPC error messages and data before forwarding the response to the page.
+- On Linux and macOS, disconnect, agent exit, SIGINT, and SIGTERM stop the owned process group. Cleanup sends
+  SIGTERM, then SIGKILL after one second, and holds the connection slot until that deadline. Working files
+  remain in the temporary directory. Tools that create a separate process group can escape this cleanup.
+  Windows only stops the direct agent process. This is lifecycle cleanup, not a sandbox or a spending cap.
 - No dependencies. Node 22+ (global `WebSocket`) for the tests: `node --test tests/acp.test.mjs tests/hermes.test.mjs` (after `npm run build:site`).
 
 Options: `--port` (43190), `--cmd` ("hermes acp"), `--cwd`, `--log`; env `KVN_BRIDGE_TOKEN`, `KVN_BRIDGE_PORT`,

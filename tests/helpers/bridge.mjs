@@ -64,5 +64,5 @@ export async function startBridge(t, source = agentSource, allowedOrigin = origi
   class PageSocket extends WebSocket {
     constructor(url, protocols) { super(url, { protocols, headers: { origin: allowedOrigin } }); sockets.push(this); }
   }
-  return { port, token, dir, WebSocketImpl: PageSocket, stop: () => child.kill('SIGINT') };
+  return { port, token, dir, WebSocketImpl: PageSocket, stop: (signal = 'SIGINT') => child.kill(signal) };
 }

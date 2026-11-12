@@ -37,6 +37,8 @@ function diag(kind, text) {
 const token = process.env.KVN_BRIDGE_TOKEN || crypto.randomBytes(18).toString('base64url');
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 let busy = false;
+let closeSession = null;
+let stopping = false;
 
 const server = http.createServer((req, res) => {
   if (!hostOk(req)) { res.writeHead(403); return res.end('loopback only'); }
@@ -71,16 +73,32 @@ function hostOk(req) {
 function session(socket) {
   const cwd = fixedCwd || fs.mkdtempSync(path.join(os.tmpdir(), 'kvn-acp-'));
   const [bin, ...rest] = cmd.split(' ').filter(Boolean);
-  const child = spawn(bin, rest, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
+  const processGroup = process.platform !== 'win32';
+  const child = spawn(bin, rest, { cwd, detached: processGroup, stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
   log(`connected; started "${cmd}" in ${cwd}`); diag('session', `start ${cwd}`);
   let closed = false;
+  const signal = name => {
+    if (!child.pid) return;
+    try {
+      if (processGroup) process.kill(-child.pid, name);
+      else child.kill(name);
+    } catch (error) { if (error.code !== 'ESRCH') diag('cleanup-error', error.code); }
+  };
   const close = why => {
-    if (closed) return; closed = true; busy = false;
-    try { child.kill('SIGTERM'); } catch {}
+    if (closed) return; closed = true;
+    signal('SIGTERM');
     try { socket.end(frame(Buffer.from([0x03, 0xe8]), 0x8)); } catch {}
     socket.destroy();
+    // Keep the slot until resistant descendants have received SIGKILL, even if the agent exits first.
+    setTimeout(() => {
+      signal('SIGKILL');
+      child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy();
+      closeSession = null;
+      busy = false;
+    }, 1000);
     log(`closed (${why})`); diag('session', `closed ${why}`);
   };
+  closeSession = close;
   child.on('error', e => { send({ jsonrpc: '2.0', method: '_bridge/error', params: { message: `could not start ${bin}: ${e.code || e.message}` } }); close('spawn error'); });
   child.on('exit', code => { send({ jsonrpc: '2.0', method: '_bridge/exit', params: { code } }); close(`agent exited ${code}`); });
   let out = '';
@@ -163,4 +181,12 @@ server.listen(port, '127.0.0.1', () => {
   for (const o of origins) if (!o.includes('localhost')) console.log(`  or open: ${o}/#acp=${pair}`);
   console.log('\n  Ctrl+C to stop. Not a sandbox: Hermes retains its native tools and approval policy.\n');
 });
-process.on('SIGINT', () => process.exit(0));
+function shutdown() {
+  if (stopping) return;
+  stopping = true;
+  server.close();
+  server.closeAllConnections();
+  closeSession?.('bridge shutdown');
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
